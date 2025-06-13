@@ -15,6 +15,19 @@
     </thead>
     <tbody></tbody>
   </table>
-  <script src="app.js"></script>
+  <script>
+  async function fetchWeatherData() {
+    try {
+      const res = await fetch("/api/weather");
+      const json = await res.json();
+      document.getElementById("weather-output").textContent = JSON.stringify(json, null, 2);
+    } catch (e) {
+      document.getElementById("weather-output").textContent = "❌ Error loading data";
+    }
+  }
+
+  fetchWeatherData();
+  setInterval(fetchWeatherData, 4000);
+</script>
 </body>
 </html>
