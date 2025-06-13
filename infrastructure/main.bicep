@@ -101,11 +101,4 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     }
   }
 }
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid(containerGroup.id, 'blob-contributor')
-  scope: storageAccount
-  properties: {
-    principalId: containerGroup.identity.principalId
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
-  }
-}
+
