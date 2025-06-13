@@ -2,7 +2,7 @@ param location string = 'westus'
 param storageAccountName string = 'cloudtopiablob2025'
 param containerName string = 'weatherdata'
 param acrName string = 'cloudtopiaregistry'
-param dashboardImage string = 'html-dashboard:v1'
+param dashboardImage string = 'html-dashboard:v2'
 param simulatorImage string = 'weather-simulator:v1'
 param containerGroupName string = 'weather-containers'
 param acrUsername string
