@@ -6,16 +6,15 @@ param dashboardImage string = 'html-dashboard:v1'
 param simulatorImage string = 'weather-simulator:v1'
 param containerGroupName string = 'weather-containers'
 param acrUsername string
-
 @secure()
 param acrPassword string
-
-
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
   location: location
-  sku: { name: 'Standard_LRS' }
+  sku: {
+    name: 'Standard_LRS'
+  }
   kind: 'StorageV2'
 }
 
@@ -50,7 +49,6 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
         name: 'dashboard'
         properties: {
           image: '${acr.properties.loginServer}/${dashboardImage}'
-
           ports: [
             {
               port: 80
@@ -67,7 +65,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'simulator'
         properties: {
-          image: '${acr.properties.loginServer}/${dashboardImage}'
+          image: '${acr.properties.loginServer}/${simulatorImage}'
           resources: {
             requests: {
               cpu: 0.5
@@ -78,13 +76,12 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       }
     ]
     imageRegistryCredentials: [
-  {
-    server: acr.properties.loginServer
-    username: acrUsername
-    password: acrPassword
-  }
-]
-
+      {
+        server: acr.properties.loginServer
+        username: acrUsername
+        password: acrPassword
+      }
+    ]
     ipAddress: {
       type: 'Public'
       ports: [
@@ -96,7 +93,6 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     }
   }
 }
-
 
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
   name: guid(containerGroup.id, 'blob-contributor')
