@@ -12,8 +12,12 @@ DASHBOARD_PORT=80
 # Step 1: Clone repo if not already cloned
 if [ ! -d "$FOLDER" ]; then
   git clone $REPO
+  cd $FOLDER
+else
+  cd $FOLDER
+  echo "Repo already cloned. Pulling latest updates..."
+  git pull origin main
 fi
-cd $FOLDER
 
 # Step 2: Get sandbox resource group
 export RESOURCE_GROUP=$(az group list --query "[0].name" -o tsv)
