@@ -12,7 +12,8 @@ param vnetName string = 'cloudtopia-vnet'
 param subnetName string = 'weather-subnet'
 param vnetAddressPrefix string = '10.0.0.0/16'
 param subnetAddressPrefix string = '10.0.0.0/24'
-
+param workspaceName string = 'cloudtopia-logs'
+param appInsightsName string = 'cloudtopia-insights'
 
 var nsgName = '${vnetName}-nsg'
 
@@ -156,5 +157,26 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
         }
       ]
     }
+  }
+}
+
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+  name: workspaceName
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
+  }
+}
+
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: appInsightsName
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalytics.id
   }
 }
