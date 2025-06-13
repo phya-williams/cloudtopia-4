@@ -5,6 +5,9 @@ param acrName string = 'cloudtopiaregistry'
 param dashboardImage string = 'html-dashboard:v1'
 param simulatorImage string = 'weather-simulator:v1'
 param containerGroupName string = 'weather-containers'
+param acrUsername string
+param acrPassword string
+
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
@@ -43,18 +46,14 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'dashboard'
         properties: {
-          image: '${acr.name}.azurecr.io/${dashboardImage}'
-          ports: [
-            {
-              port: 80
-            }
-          ]
-          resources: {
-            requests: {
-              cpu: 0.5
-              memoryInGb: 1
-            }
-          }
+          imageRegistryCredentials: [
+  {
+    server: '${acr.name}.azurecr.io'
+    username: acrUsername
+    password: acrPassword
+  }
+]
+
         }
       }
       {
