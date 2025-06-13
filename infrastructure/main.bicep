@@ -6,7 +6,7 @@ param dashboardImage string = 'html-dashboard:v1'
 param simulatorImage string = 'weather-simulator:v1'
 param containerGroupName string = 'weather-containers'
 param acrUsername string
-param acrPassword string
+param acrPassword securestring
 
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
@@ -46,7 +46,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'dashboard'
         properties: {
-          image: '${acr.name}.azurecr.io/${dashboardImage}'
+          image: acr.name + '.azurecr.io/' + dashboardImage
           ports: [
             {
               port: 80
@@ -63,7 +63,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'simulator'
         properties: {
-          image: '${acr.name}.azurecr.io/${simulatorImage}'
+          image: acr.name + '.azurecr.io/' + simulatorImage
           resources: {
             requests: {
               cpu: 0.5
@@ -75,7 +75,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     ]
     imageRegistryCredentials: [
       {
-        server: '${acr.name}.azurecr.io'
+        server: acr.name + '.azurecr.io'
         username: acrUsername
         password: acrPassword
       }
@@ -90,7 +90,6 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       ]
     }
   }
-  dependsOn: [acr]
 }
 
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
