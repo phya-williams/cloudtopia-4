@@ -48,7 +48,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'dashboard'
         properties: {
-          image: '${acr.properties.loginServer}/${dashboardImage}'
+          image: '${string(acr.properties.loginServer)}/${dashboardImage}'
           ports: [
             {
               port: 80
@@ -65,7 +65,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'simulator'
         properties: {
-          image: '${acr.properties.loginServer}/${simulatorImage}'
+          image: '${string(acr.properties.loginServer)}/${simulatorImage}'
           resources: {
             requests: {
               cpu: 0.5
@@ -77,7 +77,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     ]
     imageRegistryCredentials: [
       {
-        server: acr.properties.loginServer
+        server: string(acr.properties.loginServer)
         username: acrUsername
         password: acrPassword
       }
