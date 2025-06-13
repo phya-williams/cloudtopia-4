@@ -68,6 +68,12 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
         name: 'simulator'
         properties: {
           image: '${acrLoginServer}/${simulatorImage}'
+          environmentVariables: [
+            {
+              name: 'STORAGE_ACCOUNT_NAME'
+              value: storageAccountName
+            }
+          ]
           resources: {
             requests: {
               cpu: 0.5
