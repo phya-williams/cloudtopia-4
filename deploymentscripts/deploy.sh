@@ -21,7 +21,7 @@ echo "Using resource group: $RESOURCE_GROUP"
 
 # Step 3: Delete existing container group if it exists
 echo "Cleaning up any previous container group..."
-az container delete --name $CONTAINER_GROUP_NAME --resource-group $RESOURCE_GROUP --yes --no-wait || true
+az container delete --name $CONTAINER_GROUP_NAME --resource-group $RESOURCE_GROUP --yes || true
 
 # Step 4: Create ACR
 az acr create \
