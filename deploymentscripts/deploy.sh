@@ -89,7 +89,7 @@ az monitor scheduled-query create \
   --description "Rain detected at CloudTopia - consider weather protocols" \
   --severity 2 \
   --enabled true \
-  --condition "count > 0" \
+  --condition "count of results > 0" \
   --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where Uri contains 'Rain' or Uri contains 'rain' | where TimeGenerated > ago(5m) | summarize count()" \
   --action-groups $ACTION_GROUP_NAME \
   --evaluation-frequency "PT5M" \
@@ -104,7 +104,7 @@ az monitor scheduled-query create \
   --description "High temperature detected - check guest comfort measures" \
   --severity 2 \
   --enabled true \
-  --condition "count > 0" \
+  --condition "count of results > 0" \
   --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where OperationName == 'PutBlob' | where StatusCode == 201 | where TimeGenerated > ago(10m) | summarize count() | where count_ > 0" \
   --action-groups $ACTION_GROUP_NAME \
   --evaluation-frequency "PT10M" \
@@ -119,7 +119,7 @@ az monitor scheduled-query create \
   --description "Low visibility conditions - safety protocols required" \
   --severity 1 \
   --enabled true \
-  --condition "count > 0" \
+  --condition "count of results > 0" \
   --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where TimeGenerated > ago(10m) | where StatusCode == 201 | summarize UploadCount = count() | where UploadCount > 0" \
   --action-groups $ACTION_GROUP_NAME \
   --evaluation-frequency "PT15M" \
@@ -134,7 +134,7 @@ az monitor scheduled-query create \
   --description "High wind detected - secure outdoor attractions" \
   --severity 1 \
   --enabled true \
-  --condition "count > 5" \
+  --condition "count of results > 5" \
   --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where TimeGenerated > ago(15m) | where StatusCode == 201 | summarize RecentUploads = count() | where RecentUploads > 5" \
   --action-groups $ACTION_GROUP_NAME \
   --evaluation-frequency "PT15M" \
@@ -149,7 +149,7 @@ az monitor scheduled-query create \
   --description "Storm conditions detected - implement weather emergency protocols" \
   --severity 1 \
   --enabled true \
-  --condition "count >= 2" \
+  --condition "count of results >= 2" \
   --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where Uri contains 'Rain' or Uri contains 'Cloudy' or Uri contains 'Overcast' | where TimeGenerated > ago(15m) | summarize StormIndicators = count() | where StormIndicators >= 2" \
   --action-groups $ACTION_GROUP_NAME \
   --evaluation-frequency "PT10M" \
@@ -164,7 +164,7 @@ az monitor scheduled-query create \
   --description "Perfect weather conditions - optimal park operations" \
   --severity 4 \
   --enabled true \
-  --condition "count > 3" \
+  --condition "count of results > 3" \
   --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where Uri contains 'Sunny' or Uri contains 'Clear' | where TimeGenerated > ago(30m) | summarize PerfectConditions = count() | where PerfectConditions > 3" \
   --action-groups $ACTION_GROUP_NAME \
   --evaluation-frequency "PT30M" \
