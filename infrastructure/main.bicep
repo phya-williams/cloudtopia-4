@@ -1,4 +1,4 @@
-param location string = 'eastus'
+param location string = 'westus'
 param storageAccountName string = 'cloudtopiablob2025'
 param containerName string = 'weatherdata'
 param acrName string = 'cloudtopiaregistry'
