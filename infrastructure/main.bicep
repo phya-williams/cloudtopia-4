@@ -1,31 +1,19 @@
 param location string = 'eastus'
 param storageAccountName string = 'cloudtopiablob2025'
 param containerName string = 'weatherdata'
-param vnetName string = 'cloudtopia-vnet'
-param subnetName string = 'weather-subnet'
-param vnetAddressPrefix string = '10.0.0.0/16'
-param subnetAddressPrefix string = '10.0.0.0/24'
-param workspaceName string = 'weatheranalytics'
-param appInsightsName string = 'weatherappinsights'
-param appServicePlanName string = 'cloudtopia-plan'
-param webAppName string = 'cloudtopia-dashboard'
+param acrName string = 'cloudtopiaregistry'
+param dashboardContainerName string = 'cloudtopia-dashboard'
+param simulatorContainerName string = 'weather-simulator'
+param containerGroupName string = 'weather-containers'
+param acrSku string = 'Basic'
 
-
-
-var nsgName = '${vnetName}-nsg'
-
-// Storage Account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
   location: location
-  sku: {
-    name: 'Standard_LRS'
-  }
+  sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
-  properties: {}
 }
 
-// Blob Container
 resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2022-09-01' = {
   name: '${storageAccount.name}/default/${containerName}'
   properties: {
@@ -33,163 +21,69 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   }
 }
 
-// Network Security Group
-resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
-  name: nsgName
+resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
+  name: acrName
   location: location
+  sku: { name: acrSku }
   properties: {
-    securityRules: [
-      {
-        name: 'Allow-HTTP'
-        properties: {
-          priority: 100
-          direction: 'Inbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRange: '80'
-          sourceAddressPrefix: '*'
-          destinationAddressPrefix: '*'
-        }
-      }
-    ]
+    adminUserEnabled: true
   }
 }
 
-// Virtual Network + Subnet with NSG
-resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
-  name: vnetName
+resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01' = {
+  name: containerGroupName
   location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
-    addressSpace: {
-      addressPrefixes: [vnetAddressPrefix]
+    osType: 'Linux'
+    containers: [
+      {
+        name: dashboardContainerName
+        properties: {
+          image: '${acr.name}.azurecr.io/${dashboardContainerName}:v1'
+          ports: [{ port: 80 }]
+          resources: {
+            requests: {
+              cpu: 0.5
+              memoryInGb: 1
+            }
+          }
+        }
+      }
+      {
+        name: simulatorContainerName
+        properties: {
+          image: '${acr.name}.azurecr.io/${simulatorContainerName}:v1'
+          resources: {
+            requests: {
+              cpu: 0.5
+              memoryInGb: 1
+            }
+          }
+        }
+      }
+    ]
+    imageRegistryCredentials: [
+      {
+        server: '${acr.name}.azurecr.io'
+        username: acr.listCredentials().username
+        password: acr.listCredentials().passwords[0].value
+      }
+    ]
+    ipAddress: {
+      type: 'Public'
+      ports: [{ protocol: 'tcp'; port: 80 }]
     }
-    subnets: [
-      {
-        name: subnetName
-        properties: {
-          addressPrefix: subnetAddressPrefix
-          networkSecurityGroup: {
-            id: nsg.id
-          }
-        }
-      }
-    ]
   }
 }
 
-// Monitoring
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
-  name: workspaceName
-  location: location
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(containerGroup.id, 'blob-data-contributor')
+  scope: storageAccount
   properties: {
-    sku: { name: 'PerGB2018' }
-    retentionInDays: 30
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
+    principalId: containerGroup.identity.principalId
   }
 }
- 
-resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: appInsightsName
-  location: location
-  kind: 'web'
-  properties: {
-    Application_Type: 'web'
-    WorkspaceResourceId: logAnalytics.id
-  }
-}
-
-resource servicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
-  name: appServicePlanName
-  location: location
-  sku: {
-    name: 'B1'     // ✅ Use Basic B1 (Linux compatible)
-    tier: 'Basic'
-  }
-  kind: 'linux'     // ✅ Must be 'linux' for Linux App Services
-  properties: {
-    reserved: true  // ✅ Must be true for Linux App Service
-  }
-}
-
-
-// Container to run the Dashboard
-resource weatherSimulator 'Microsoft.ContainerInstance/containerGroups@2021-09-01' = {
-  name: 'cloudtopia-weather-dashboard'
-  location: location
-  properties: {
-    containers: [
-      {
-        name: 'simulator'
-        properties: {
-          image: '${acrLoginServer}/weather-simulator:latest'
-          resources: {
-            requests: {
-              cpu: 1.0
-              memoryInGb: 1.5
-            }
-          }
-          environmentVariables: [
-            {
-              name: 'AZURE_STORAGE_CONNECTION_STRING'
-              value: storageAccount.listKeys().keys[0].value
-            }
-          ]
-        }
-      }
-    ]
-    osType: 'Linux'
-    imageRegistryCredentials: [
-      {
-        server: acrLoginServer
-        username: acrUsername
-        password: acrPassword
-      }
-    ]
-    restartPolicy: 'Always'
-  }
-  dependsOn: [
-    storageAccount
-  ]
-}
-
-// Container to run the Python weather simulator
-resource weatherSimulator 'Microsoft.ContainerInstance/containerGroups@2021-09-01' = {
-  name: 'cloudtopia-weather-simulator'
-  location: location
-  properties: {
-    containers: [
-      {
-        name: 'simulator'
-        properties: {
-          image: '${acrLoginServer}/weather-simulator:latest'
-          resources: {
-            requests: {
-              cpu: 1.0
-              memoryInGb: 1.5
-            }
-          }
-          environmentVariables: [
-            {
-              name: 'AZURE_STORAGE_CONNECTION_STRING'
-              value: storageAccount.listKeys().keys[0].value
-            }
-          ]
-        }
-      }
-    ]
-    osType: 'Linux'
-    imageRegistryCredentials: [
-      {
-        server: acrLoginServer
-        username: acrUsername
-        password: acrPassword
-      }
-    ]
-    restartPolicy: 'Always'
-  }
-  dependsOn: [
-    storageAccount
-  ]
-}
-
-// Optional: Add same for dashboard if not using Azure Web App
