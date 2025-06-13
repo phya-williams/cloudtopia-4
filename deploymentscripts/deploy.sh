@@ -8,6 +8,9 @@ ACR_NAME="cloudtopiaregistry"
 DASHBOARD_CONTAINER_NAME="dashboard"
 CONTAINER_GROUP_NAME="weather-containers"
 DASHBOARD_PORT=80
+WORKSPACE_NAME="cloudtopia-logs"
+ACTION_GROUP_NAME="CloudTopia-Weather-Alerts"
+
 
 # Step 1: Clone repo if not already cloned
 if [ ! -d "$FOLDER" ]; then
@@ -66,3 +69,103 @@ if [[ -n "$PUBLIC_IP" ]]; then
 else
   echo "⚠️ Could not retrieve public IP of container group."
 fi
+
+echo "🔧 Ensuring action group exists..."
+az monitor action-group create \
+  --name $ACTION_GROUP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --short-name ctweather \
+  --location eastus \
+  --action email ctalerts phya.williams@peopleshores.com
+
+echo "📡 Creating alert rules in Log Analytics..."
+
+# Rain Detection Alert
+az monitor scheduled-query create \
+  --name "CloudTopia-Rain-Alert" \
+  --resource-group $RESOURCE_GROUP \
+  --location eastus \
+  --scopes $(az monitor log-analytics workspace show --resource-group $RESOURCE_GROUP --workspace-name $WORKSPACE_NAME --query id -o tsv) \
+  --description "Rain detected at CloudTopia - consider weather protocols" \
+  --severity 2 \
+  --enabled true \
+  --condition "count > 0" \
+  --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where Uri contains 'Rain' or Uri contains 'rain' | where TimeGenerated > ago(5m) | summarize count()" \
+  --action-groups $ACTION_GROUP_NAME \
+  --evaluation-frequency "PT5M" \
+  --window-size "PT5M"
+
+# High Temperature Alert
+az monitor scheduled-query create \
+  --name "CloudTopia-High-Temperature" \
+  --resource-group $RESOURCE_GROUP \
+  --location eastus \
+  --scopes $(az monitor log-analytics workspace show --resource-group $RESOURCE_GROUP --workspace-name $WORKSPACE_NAME --query id -o tsv) \
+  --description "High temperature detected - check guest comfort measures" \
+  --severity 2 \
+  --enabled true \
+  --condition "count > 0" \
+  --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where OperationName == 'PutBlob' | where StatusCode == 201 | where TimeGenerated > ago(10m) | summarize count() | where count_ > 0" \
+  --action-groups $ACTION_GROUP_NAME \
+  --evaluation-frequency "PT10M" \
+  --window-size "PT10M"
+
+# Low Visibility Alert
+az monitor scheduled-query create \
+  --name "CloudTopia-Low-Visibility" \
+  --resource-group $RESOURCE_GROUP \
+  --location eastus \
+  --scopes $(az monitor log-analytics workspace show --resource-group $RESOURCE_GROUP --workspace-name $WORKSPACE_NAME --query id -o tsv) \
+  --description "Low visibility conditions - safety protocols required" \
+  --severity 1 \
+  --enabled true \
+  --condition "count > 0" \
+  --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where TimeGenerated > ago(10m) | where StatusCode == 201 | summarize UploadCount = count() | where UploadCount > 0" \
+  --action-groups $ACTION_GROUP_NAME \
+  --evaluation-frequency "PT15M" \
+  --window-size "PT15M"
+
+# High Wind Speed Alert
+az monitor scheduled-query create \
+  --name "CloudTopia-High-Wind" \
+  --resource-group $RESOURCE_GROUP \
+  --location eastus \
+  --scopes $(az monitor log-analytics workspace show --resource-group $RESOURCE_GROUP --workspace-name $WORKSPACE_NAME --query id -o tsv) \
+  --description "High wind detected - secure outdoor attractions" \
+  --severity 1 \
+  --enabled true \
+  --condition "count > 5" \
+  --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where TimeGenerated > ago(15m) | where StatusCode == 201 | summarize RecentUploads = count() | where RecentUploads > 5" \
+  --action-groups $ACTION_GROUP_NAME \
+  --evaluation-frequency "PT15M" \
+  --window-size "PT15M"
+
+# Storm Conditions Alert
+az monitor scheduled-query create \
+  --name "CloudTopia-Storm-Conditions" \
+  --resource-group $RESOURCE_GROUP \
+  --location eastus \
+  --scopes $(az monitor log-analytics workspace show --resource-group $RESOURCE_GROUP --workspace-name $WORKSPACE_NAME --query id -o tsv) \
+  --description "Storm conditions detected - implement weather emergency protocols" \
+  --severity 1 \
+  --enabled true \
+  --condition "count >= 2" \
+  --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where Uri contains 'Rain' or Uri contains 'Cloudy' or Uri contains 'Overcast' | where TimeGenerated > ago(15m) | summarize StormIndicators = count() | where StormIndicators >= 2" \
+  --action-groups $ACTION_GROUP_NAME \
+  --evaluation-frequency "PT10M" \
+  --window-size "PT15M"
+
+# Perfect Weather Alert
+az monitor scheduled-query create \
+  --name "CloudTopia-Perfect-Weather" \
+  --resource-group $RESOURCE_GROUP \
+  --location eastus \
+  --scopes $(az monitor log-analytics workspace show --resource-group $RESOURCE_GROUP --workspace-name $WORKSPACE_NAME --query id -o tsv) \
+  --description "Perfect weather conditions - optimal park operations" \
+  --severity 4 \
+  --enabled true \
+  --condition "count > 3" \
+  --condition-query "StorageBlobLogs | where Uri contains 'weather-log' | where Uri contains 'Sunny' or Uri contains 'Clear' | where TimeGenerated > ago(30m) | summarize PerfectConditions = count() | where PerfectConditions > 3" \
+  --action-groups $ACTION_GROUP_NAME \
+  --evaluation-frequency "PT30M" \
+  --window-size "PT30M"
