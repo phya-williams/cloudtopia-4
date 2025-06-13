@@ -41,15 +41,15 @@ az acr create \
 export ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query "username" -o tsv)
 export ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
 
-# Step 6: Deploy Bicep with ACR credentials
+# Step 6: Build and push containers before deploying
+az acr build --registry $ACR_NAME --image html-dashboard:v1 html-dashboard/
+az acr build --registry $ACR_NAME --image weather-simulator:v1 weather-simulator/
+
+# Step 7: Deploy Bicep with ACR credentials
 az deployment group create \
   --resource-group $RESOURCE_GROUP \
   --template-file infrastructure/main.bicep \
   --parameters acrUsername=$ACR_USERNAME acrPassword=$ACR_PASSWORD
-
-# Step 7: Build and push containers
-az acr build --registry $ACR_NAME --image html-dashboard:v1 html-dashboard/
-az acr build --registry $ACR_NAME --image weather-simulator:v1 weather-simulator/
 
 # Step 8: Auto-open dashboard public IP
 echo "Waiting for container group public IP..."
