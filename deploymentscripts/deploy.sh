@@ -41,6 +41,29 @@ az acr create \
 export ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query "username" -o tsv)
 export ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
 
+echo "📦 Ensuring dashboard container has necessary files..."
+
+# Rebuild package.json if missing (for express + Azure Blob SDK)
+if [ ! -f "html-dashboard/package.json" ]; then
+  echo "📝 Creating package.json for html-dashboard..."
+  cat <<EOF > html-dashboard/package.json
+{
+  "name": "cloudtopia-dashboard",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.18.2",
+    "@azure/storage-blob": "^12.16.0"
+  }
+}
+EOF
+fi
+
+# Optional: create lockfile if needed to avoid npm warnings
+touch html-dashboard/package-lock.json
+
+
 # Step 6: Build and push containers before deploying
 az acr build --registry $ACR_NAME --image html-dashboard:v1 html-dashboard/
 az acr build --registry $ACR_NAME --image weather-simulator:v1 weather-simulator/
