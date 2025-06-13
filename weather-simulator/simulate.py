@@ -1,10 +1,19 @@
+import os
 import time, json, random
 from datetime import datetime
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 
-conn_str = "your_connection_string"
 container_name = "weatherdata"
-blob_service = BlobServiceClient.from_connection_string(conn_str)
+storage_account_name = os.environ.get("STORAGE_ACCOUNT_NAME")
+
+if not storage_account_name:
+    raise EnvironmentError("STORAGE_ACCOUNT_NAME environment variable not set")
+
+blob_service = BlobServiceClient(
+    account_url=f"https://{storage_account_name}.blob.core.windows.net",
+    credential=DefaultAzureCredential(),
+)
 container_client = blob_service.get_container_client(container_name)
 
 while True:
