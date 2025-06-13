@@ -50,7 +50,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'dashboard'
         properties: {
-          image: '$${acrLoginServer}/${dashboardImage}'
+          image: '${acrLoginServer}/${dashboardImage}'
           ports: [
             {
               port: 80
@@ -67,7 +67,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'simulator'
         properties: {
-          image: '$${acrLoginServer}/${simulatorImage}'
+          image: '${acrLoginServer}/${simulatorImage}'
           resources: {
             requests: {
               cpu: 0.5
