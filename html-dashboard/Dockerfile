@@ -1,4 +1,13 @@
-FROM nginx:alpine
-COPY index.html /usr/share/nginx/html/
-COPY style.css /usr/share/nginx/html/
-COPY app.js /usr/share/nginx/html/
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY server.js .
+COPY public/ ./public/
+
+RUN npm install express @azure/storage-blob
+
+ENV PORT=80
+EXPOSE 80
+
+CMD ["node", "server.js"]
