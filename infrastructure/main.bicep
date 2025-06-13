@@ -38,6 +38,9 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
 
 var acrLoginServer = acr.properties.loginServer
 
+// Get the storage account connection string securely
+var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${listKeys(storageAccount.id, storageAccount.apiVersion).keys[0].value};EndpointSuffix=core.windows.net'
+
 resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01' = {
   name: containerGroupName
   location: location
@@ -70,8 +73,12 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
           image: '${acrLoginServer}/${simulatorImage}'
           environmentVariables: [
             {
-              name: 'STORAGE_ACCOUNT_NAME'
-              value: storageAccountName
+              name: 'AZURE_STORAGE_CONNECTION_STRING'
+              value: storageConnectionString
+            }
+            {
+              name: 'AZURE_STORAGE_CONTAINER'
+              value: containerName
             }
           ]
           resources: {
@@ -101,4 +108,3 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     }
   }
 }
-
