@@ -2,10 +2,9 @@ param location string = 'eastus'
 param storageAccountName string = 'cloudtopiablob2025'
 param containerName string = 'weatherdata'
 param acrName string = 'cloudtopiaregistry'
-param dashboardContainerName string = 'cloudtopia-dashboard'
-param simulatorContainerName string = 'weather-simulator'
+param dashboardImage string = 'html-dashboard:v1'
+param simulatorImage string = 'weather-simulator:v1'
 param containerGroupName string = 'weather-containers'
-param acrSku string = 'Basic'
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
@@ -24,7 +23,9 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
 resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
   name: acrName
   location: location
-  sku: { name: acrSku }
+  sku: {
+    name: 'Basic'
+  }
   properties: {
     adminUserEnabled: true
   }
@@ -40,10 +41,14 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     osType: 'Linux'
     containers: [
       {
-        name: dashboardContainerName
+        name: 'dashboard'
         properties: {
-          image: '${acr.name}.azurecr.io/${dashboardContainerName}:v1'
-          ports: [{ port: 80 }]
+          image: '${acr.name}.azurecr.io/${dashboardImage}'
+          ports: [
+            {
+              port: 80
+            }
+          ]
           resources: {
             requests: {
               cpu: 0.5
@@ -53,9 +58,9 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
         }
       }
       {
-        name: simulatorContainerName
+        name: 'simulator'
         properties: {
-          image: '${acr.name}.azurecr.io/${simulatorContainerName}:v1'
+          image: '${acr.name}.azurecr.io/${simulatorImage}'
           resources: {
             requests: {
               cpu: 0.5
@@ -68,22 +73,28 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     imageRegistryCredentials: [
       {
         server: '${acr.name}.azurecr.io'
-        username: acr.listCredentials().username
-        password: acr.listCredentials().passwords[0].value
+        username: 'admin'  // TEMP FIX – replace dynamically via GitHub Secrets or manually
+        password: 'PLACEHOLDER' // Azure doesn’t allow `listCredentials()` inline in Bicep
       }
     ]
     ipAddress: {
       type: 'Public'
-      ports: [{ protocol: 'tcp'; port: 80 }]
+      ports: [
+        {
+          protocol: 'Tcp'
+          port: 80
+        }
+      ]
     }
   }
+  dependsOn: [acr]
 }
 
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(containerGroup.id, 'blob-data-contributor')
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(containerGroup.id, 'blob-contributor')
   scope: storageAccount
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
     principalId: containerGroup.identity.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
   }
 }
