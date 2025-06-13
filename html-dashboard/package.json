@@ -1,0 +1,10 @@
+{
+  "name": "cloudtopia-dashboard",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.18.2",
+    "@azure/storage-blob": "^12.16.0"
+  }
+}
