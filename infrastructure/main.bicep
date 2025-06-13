@@ -46,14 +46,18 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'dashboard'
         properties: {
-          imageRegistryCredentials: [
-  {
-    server: '${acr.name}.azurecr.io'
-    username: acrUsername
-    password: acrPassword
-  }
-]
-
+          image: '${acr.name}.azurecr.io/${dashboardImage}'
+          ports: [
+            {
+              port: 80
+            }
+          ]
+          resources: {
+            requests: {
+              cpu: 0.5
+              memoryInGb: 1
+            }
+          }
         }
       }
       {
@@ -72,8 +76,8 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     imageRegistryCredentials: [
       {
         server: '${acr.name}.azurecr.io'
-        username: 'admin'  // TEMP FIX – replace dynamically via GitHub Secrets or manually
-        password: 'PLACEHOLDER' // Azure doesn’t allow `listCredentials()` inline in Bicep
+        username: acrUsername
+        password: acrPassword
       }
     ]
     ipAddress: {
