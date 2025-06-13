@@ -105,6 +105,16 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
         name: 'dashboard'
         properties: {
           image: '${acrLoginServer}/${dashboardImage}'
+          environmentVariables: [
+            {
+              name: 'AZURE_STORAGE_CONNECTION_STRING'
+              value: storageConnectionString
+            }
+            {
+              name: 'AZURE_STORAGE_CONTAINER'
+              value: containerName
+            }
+          ]
           ports: [
             {
               port: 80
