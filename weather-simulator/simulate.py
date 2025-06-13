@@ -1,19 +1,15 @@
 import os
-import time, json, random
+import json
+import time
+import random
 from datetime import datetime
-from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 
-container_name = "weatherdata"
-storage_account_name = os.environ.get("STORAGE_ACCOUNT_NAME")
+# Get storage connection info from environment
+conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+container_name = os.getenv("AZURE_STORAGE_CONTAINER", "weatherdata")
 
-if not storage_account_name:
-    raise EnvironmentError("STORAGE_ACCOUNT_NAME environment variable not set")
-
-blob_service = BlobServiceClient(
-    account_url=f"https://{storage_account_name}.blob.core.windows.net",
-    credential=DefaultAzureCredential(),
-)
+blob_service = BlobServiceClient.from_connection_string(conn_str)
 container_client = blob_service.get_container_client(container_name)
 
 while True:
@@ -33,5 +29,5 @@ while True:
     }
     blob_name = f"weather_{datetime.utcnow().timestamp()}.json"
     container_client.upload_blob(blob_name, json.dumps(data), overwrite=True)
-    print(f"Uploaded: {blob_name}")
+    print(f"✅ Uploaded: {blob_name}")
     time.sleep(4)
