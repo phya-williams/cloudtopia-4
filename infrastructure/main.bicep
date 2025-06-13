@@ -36,6 +36,8 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
   }
 }
 
+var acrLoginServer = acr.properties.loginServer
+
 resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01' = {
   name: containerGroupName
   location: location
@@ -48,7 +50,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'dashboard'
         properties: {
-          image: '${string(acr.properties.loginServer)}/${dashboardImage}'
+          image: '$${acrLoginServer}/${dashboardImage}'
           ports: [
             {
               port: 80
@@ -65,7 +67,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       {
         name: 'simulator'
         properties: {
-          image: '${string(acr.properties.loginServer)}/${simulatorImage}'
+          image: '$${acrLoginServer}/${simulatorImage}'
           resources: {
             requests: {
               cpu: 0.5
@@ -77,7 +79,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     ]
     imageRegistryCredentials: [
       {
-        server: string(acr.properties.loginServer)
+        server: acrLoginServer
         username: acrUsername
         password: acrPassword
       }
@@ -93,7 +95,6 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
     }
   }
 }
-
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
   name: guid(containerGroup.id, 'blob-contributor')
   scope: storageAccount
