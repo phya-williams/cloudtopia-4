@@ -8,6 +8,56 @@ param containerGroupName string = 'weather-containers'
 param acrUsername string
 @secure()
 param acrPassword string
+param vnetName string = 'cloudtopia-vnet'
+param subnetName string = 'weather-subnet'
+param vnetAddressPrefix string = '10.0.0.0/16'
+param subnetAddressPrefix string = '10.0.0.0/24'
+
+
+var nsgName = '${vnetName}-nsg'
+
+resource nsg 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
+  name: nsgName
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'Allow-HTTP'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '80'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+    ]
+  }
+}
+
+resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
+  name: vnetName
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: [vnetAddressPrefix]
+    }
+    subnets: [
+      {
+        name: subnetName
+        properties: {
+          addressPrefix: subnetAddressPrefix
+          networkSecurityGroup: {
+            id: nsg.id
+          }
+        }
+      }
+    ]
+  }
+}
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
