@@ -1,8 +1,23 @@
 async function fetchData() {
-    const containerUrl = "https://<your_storage_account>.blob.core.windows.net/weatherdata?restype=container&comp=list";
-    const response = await fetch(containerUrl);
-    const xml = await response.text();
-    // Optionally parse XML and fetch individual blob JSONs to display in table
+  const response = await fetch('/api/weather'); // served via proxy below
+  const logs = await response.json();
+
+  const tableBody = document.querySelector('#weather-table tbody');
+  tableBody.innerHTML = ''; // Clear previous data
+
+  logs.slice(-10).reverse().forEach(log => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${log.timestamp}</td>
+      <td>${log.temperature}°F</td>
+      <td>${log.humidity}%</td>
+      <td>${log.windSpeed} ${log.windDirection}</td>
+      <td>${log.pressure} in</td>
+      <td>${log.status}</td>
+      <td>${log.location}</td>
+    `;
+    tableBody.appendChild(row);
+  });
 }
 
 setInterval(fetchData, 4000);
