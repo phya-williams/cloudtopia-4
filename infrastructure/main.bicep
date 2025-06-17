@@ -88,7 +88,6 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
   }
 }
 
-var acrLoginServer = acr.properties.loginServer
 
 // Get the storage account connection string securely
 var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${listKeys(storageAccount.id, storageAccount.apiVersion).keys[0].value};EndpointSuffix=core.windows.net'
