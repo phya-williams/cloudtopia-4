@@ -141,6 +141,11 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
               name: 'AZURE_STORAGE_CONTAINER'
               value: containerName
             }
+           // This one will be injected later via deploy script
+            {
+              name: 'DASHBOARD_API_URL'
+              value: 'placeholder'  // Will be replaced dynamically
+            }
           ]
           resources: {
             requests: {
