@@ -1,4 +1,4 @@
-param location string = 'westus'
+param location string = resourceGroup().location
 param storageAccountName string = 'cloudtopiablob2025'
 param containerName string = 'weatherdata'
 param acrName string = 'cloudtopiaregistry'
