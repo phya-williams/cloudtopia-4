@@ -86,8 +86,8 @@ echo "📋 Confirming pushed tags:"
 az acr repository show-tags --name $ACR_NAME --repository html-dashboard --output table
 az acr repository show-tags --name $ACR_NAME --repository weather-simulator --output table
 
-# Step 8: Deploy resources with Bicep
-echo "🚀 Deploying infrastructure with Bicep..."
+# Step 8: First deploy WITHOUT DASHBOARD_API_URL
+echo "🚀 Deploying infrastructure WITHOUT dashboard URL..."
 az deployment group create \
   --resource-group $RESOURCE_GROUP \
   --template-file infrastructure/main.bicep \
@@ -96,30 +96,30 @@ az deployment group create \
     acrPassword=$ACR_PASSWORD \
     acrLoginServer=$ACR_LOGIN_SERVER
 
-# Step 9: Retrieve and open public IP
-echo "🌐 Waiting for container group public IP..."
+# Step 9: Wait for dashboard IP
+echo "🌐 Waiting for dashboard public IP..."
 sleep 15
+PUBLIC_IP=$(az container show \
+  --name $CONTAINER_GROUP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query "ipAddress.ip" -o tsv)
 
-PUBLIC_IP=$(az container show --name $CONTAINER_GROUP_NAME --resource-group $RESOURCE_GROUP --query "ipAddress.ip" -o tsv)
-
-if [[ -n "$PUBLIC_IP" ]]; then
-  echo "✅ Deployment complete! Access the dashboard at: http://${PUBLIC_IP}:${DASHBOARD_PORT}"
-  if command -v xdg-open &> /dev/null; then
-    xdg-open "http://${PUBLIC_IP}:${DASHBOARD_PORT}"
-  elif command -v open &> /dev/null; then
-    open "http://${PUBLIC_IP}:${DASHBOARD_PORT}"
-  else
-    echo "🔗 Visit manually: http://${PUBLIC_IP}:${DASHBOARD_PORT}"
-  fi
-else
-  echo "⚠️ Could not retrieve public IP of container group."
+if [[ -z "$PUBLIC_IP" ]]; then
+  echo "❌ Failed to get dashboard public IP"
+  exit 1
 fi
 
-# Step 10: Create action group for alerts
-echo "🔔 Ensuring action group exists..."
-az monitor action-group create \
-  --name $ACTION_GROUP_NAME \
+echo "✅ Found dashboard IP: $PUBLIC_IP"
+
+# Step 10: Inject DASHBOARD_API_URL and redeploy just the simulator container
+echo "🔁 Re-deploying simulator container with DASHBOARD_API_URL..."
+
+az container restart \
+  --name $CONTAINER_GROUP_NAME \
+  --resource-group $RESOURCE_GROUP
+
+az container update \
+  --name $CONTAINER_GROUP_NAME \
   --resource-group $RESOURCE_GROUP \
-  --short-name ctweather \
-  --location eastus \
-  --action email ctalerts phya.williams@peopleshores.com
+  --set "properties.containers[1].environmentVariables[2].name=DASHBOARD_API_URL" \
+         "properties.containers[1].environmentVariables[2].value=http://${PUBLIC_IP}/api/weather"
