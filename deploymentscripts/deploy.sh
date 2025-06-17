@@ -42,6 +42,10 @@ sleep 20
 
 az acr show --name $ACR_NAME --query "loginServer" -o tsv
 
+export ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
+echo "🔐 Using ACR login server: $ACR_LOGIN_SERVER"
+
+
 # Step 5: Get ACR credentials
 export ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query "username" -o tsv)
 export ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
@@ -77,7 +81,7 @@ az acr build --registry $ACR_NAME --image weather-simulator:v2 weather-simulator
 az deployment group create \
   --resource-group $RESOURCE_GROUP \
   --template-file infrastructure/main.bicep \
-  --parameters acrUsername=$ACR_USERNAME acrPassword=$ACR_PASSWORD
+  --parameters acrUsername=$ACR_USERNAME acrPassword=$ACR_PASSWORD acrLoginServer=$ACR_LOGIN_SERVER
 
 # Step 8: Auto-open dashboard public IP
 echo "Waiting for container group public IP..."
