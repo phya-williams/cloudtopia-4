@@ -65,8 +65,8 @@ touch html-dashboard/package-lock.json
 
 
 # Step 6: Build and push containers before deploying
-az acr build --registry $ACR_NAME --image html-dashboard:v1 html-dashboard/
-az acr build --registry $ACR_NAME --image weather-simulator:v1 weather-simulator/
+az acr build --registry $ACR_NAME --image html-dashboard:v2 html-dashboard/
+az acr build --registry $ACR_NAME --image weather-simulator:v2 weather-simulator/
 
 # Step 7: Deploy Bicep with ACR credentials
 az deployment group create \
