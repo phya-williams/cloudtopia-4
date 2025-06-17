@@ -37,6 +37,11 @@ az acr create \
   --sku Basic \
   --admin-enabled true
 
+echo "⏳ Waiting for ACR to be fully provisioned..."
+sleep 20
+
+az acr show --name $ACR_NAME --query "loginServer" -o tsv
+
 # Step 5: Get ACR credentials
 export ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query "username" -o tsv)
 export ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
