@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>CloudTopia Weather Logs</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -24,24 +24,32 @@
     <tbody></tbody>
   </table>
   <script>
-    const blobUrl = "https://cloudtopiablob2025.blob.core.windows.net/weatherdata/weather-log-1750255423.json";
-    const sas = "se=2025-06-18T22%3A12Z&sp=r&sv=2022-11-02&sr=b&sig=F7DpYNB%2B9O1QjJV97Wcyl38orzafSVa1wm8ZMyrPWQo%3D";
-    const fullUrl = `${blobUrl}?${sas}`;
+    const blobUrl = "https://cloudtopiablob2025.blob.core.windows.net/weatherdata/";
+    const sas = "se=2025-06-18T18%3A54Z&sp=r&spr=https&sv=2022-11-02&sr=c&sig=/MtR/d1kesd8TPibSfcSCchlaro8%2B8W4SGoIMnaPkK8%3D";
 
-    fetch(blobSasUrl)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log("Weather log data:", data);
-        // Do something with your data (display on UI, update chart, etc.)
-      })
-      .catch(error => {
-        console.error("Failed to fetch blob:", error);
-      });
+    const currentTime = Math.floor(Date.now() / 1000)
+    const startTime = currentTime - 300;
+
+    for (var i = startTime; i <= currentTime; i++) {
+
+      const fullUrl = `${blobUrl}weather-log-${i}.json?${sas}`;
+      console.log(fullUrl);
+
+      fetch(fullUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log("Weather log data:", data);
+          // Do something with your data (display on UI, update chart, etc.)
+        })
+        .catch(error => {
+          console.error("Failed to fetch blob:", error);
+        });
+    }
   </script>
 </body>
 
