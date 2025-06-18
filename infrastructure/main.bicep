@@ -15,6 +15,9 @@ param vnetAddressPrefix string = '10.0.0.0/16'
 param subnetAddressPrefix string = '10.0.0.0/24'
 param workspaceName string = 'cloudtopia-logs'
 param appInsightsName string = 'cloudtopia-insights'
+@description('Optional URL where the simulator will POST data')
+param dashboardApiUrl string = ''
+
 
 var nsgName = '${vnetName}-nsg'
 
@@ -143,8 +146,8 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
             }
            // This one will be injected later via deploy script
             {
-              name: 'DASHBOARD_API_URL'
-              value: 'placeholder'  // Will be replaced dynamically
+             name: 'DASHBOARD_API_URL'
+             value: dashboardApiUrl
             }
           ]
           resources: {
