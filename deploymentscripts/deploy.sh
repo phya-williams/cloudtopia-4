@@ -24,20 +24,20 @@ fi
 
 # Step 2: Get sandbox resource group
 export RESOURCE_GROUP=$(az group list --query "[0].name" -o tsv)
-echo "📌 Using resource group: $RESOURCE_GROUP"
+echo "Using resource group: $RESOURCE_GROUP"
 
 # Step 3: Clean up existing container group
-echo "🧹 Cleaning up previous container group if it exists..."
+echo "Cleaning up previous container group if it exists..."
 az container delete --name $CONTAINER_GROUP_NAME --resource-group $RESOURCE_GROUP --yes || true
 
 # Step 4: Clean up and re-create ACR
-echo "🧼 Removing existing ACR (if any)..."
+echo "Removing existing ACR (if any)..."
 az acr delete --name $ACR_NAME --resource-group $RESOURCE_GROUP --yes || true
 
-echo "⏳ Waiting for ACR to be fully deleted..."
+echo "Waiting for ACR to be fully deleted..."
 sleep 10
 
-echo "🔁 Creating fresh ACR: $ACR_NAME"
+echo "Creating fresh ACR: $ACR_NAME"
 az acr create \
   --resource-group $RESOURCE_GROUP \
   --name $ACR_NAME \
@@ -47,16 +47,16 @@ az acr create \
 sleep 20  # Give it a moment to fully provision
 
 export ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
-echo "🔐 Using ACR login server: $ACR_LOGIN_SERVER"
+echo "Using ACR login server: $ACR_LOGIN_SERVER"
 
 # Step 5: Get ACR credentials
 export ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query "username" -o tsv)
 export ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
 
 # Step 6: Ensure dashboard container has required files
-echo "📦 Ensuring html-dashboard is prepared..."
+echo "Ensuring html-dashboard is prepared..."
 if [ ! -f "html-dashboard/package.json" ]; then
-  echo "📝 Creating package.json for html-dashboard..."
+  echo "Creating package.json for html-dashboard..."
   cat <<EOF > html-dashboard/package.json
 {
   "name": "cloudtopia-dashboard",
@@ -73,21 +73,21 @@ fi
 touch html-dashboard/package-lock.json
 
 # Step 7: Build and push containers with v2 tag
-echo "🐳 Building and pushing dashboard container image..."
+echo "Building and pushing dashboard container image..."
 az acr build --registry $ACR_NAME --image "$DASHBOARD_IMAGE" html-dashboard/
 
-echo "🐍 Building and pushing weather simulator container image..."
+echo "Building and pushing weather simulator container image..."
 az acr build --registry $ACR_NAME --image "$SIMULATOR_IMAGE" weather-simulator/
 
-echo "⏳ Waiting for image availability..."
+echo "Waiting for image availability..."
 sleep 10
 
-echo "📋 Confirming pushed tags:"
+echo "Confirming pushed tags:"
 az acr repository show-tags --name $ACR_NAME --repository html-dashboard --output table
 az acr repository show-tags --name $ACR_NAME --repository weather-simulator --output table
 
 # Step 8: First deploy WITHOUT DASHBOARD_API_URL
-echo "🚀 Deploying infrastructure WITHOUT dashboard URL..."
+echo "Deploying infrastructure WITHOUT dashboard URL..."
 az deployment group create \
   --resource-group $RESOURCE_GROUP \
   --template-file infrastructure/main.bicep \
@@ -97,7 +97,7 @@ az deployment group create \
     acrLoginServer=$ACR_LOGIN_SERVER
 
 # Step 9: Wait for dashboard IP
-echo "🌐 Waiting for dashboard public IP..."
+echo "Waiting for dashboard public IP..."
 sleep 15
 PUBLIC_IP=$(az container show \
   --name $CONTAINER_GROUP_NAME \
@@ -105,14 +105,14 @@ PUBLIC_IP=$(az container show \
   --query "ipAddress.ip" -o tsv)
 
 if [[ -z "$PUBLIC_IP" ]]; then
-  echo "❌ Failed to get dashboard public IP"
+  echo "Failed to get dashboard public IP"
   exit 1
 fi
 
-echo "✅ Found dashboard IP: $PUBLIC_IP"
+echo "Found dashboard IP: $PUBLIC_IP"
 
 # Step 10: Re-deploy entire container group with DASHBOARD_API_URL injected
-echo "🔁 Re-deploying container group with DASHBOARD_API_URL..."
+echo "Re-deploying container group with DASHBOARD_API_URL..."
 
 DASHBOARD_URL="http://${PUBLIC_IP}/api/weather"
 
