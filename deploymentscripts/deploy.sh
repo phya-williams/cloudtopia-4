@@ -111,15 +111,16 @@ fi
 
 echo "✅ Found dashboard IP: $PUBLIC_IP"
 
-# Step 10: Inject DASHBOARD_API_URL and redeploy just the simulator container
-echo "🔁 Re-deploying simulator container with DASHBOARD_API_URL..."
+# Step 10: Re-deploy entire container group with DASHBOARD_API_URL injected
+echo "🔁 Re-deploying container group with DASHBOARD_API_URL..."
 
-az container restart \
-  --name $CONTAINER_GROUP_NAME \
-  --resource-group $RESOURCE_GROUP
+DASHBOARD_URL="http://${PUBLIC_IP}/api/weather"
 
-az container update \
-  --name $CONTAINER_GROUP_NAME \
+az deployment group create \
   --resource-group $RESOURCE_GROUP \
-  --set "properties.containers[1].environmentVariables[2].name=DASHBOARD_API_URL" \
-         "properties.containers[1].environmentVariables[2].value=http://${PUBLIC_IP}/api/weather"
+  --template-file infrastructure/main.bicep \
+  --parameters \
+    acrUsername=$ACR_USERNAME \
+    acrPassword=$ACR_PASSWORD \
+    acrLoginServer=$ACR_LOGIN_SERVER \
+    dashboardApiUrl=$DASHBOARD_URL
