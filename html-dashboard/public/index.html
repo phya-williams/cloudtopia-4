@@ -24,7 +24,9 @@
     <tbody></tbody>
   </table>
   <script>
-    const blobSasUrl = "https://cloudtopiablob2025.blob.core.windows.net/weatherdata?sp=r&st=2025-06-18T14:09:40Z&se=2025-06-18T22:09:40Z&spr=https&sv=2024-11-04&sr=c&sig=Hp3neHkxKR88wXu2%2Fzcxq2EjS%2FeoRpjyB%2F9dw4JbW5s%3D";
+    const blobUrl = "https://cloudtopiablob2025.blob.core.windows.net/weatherdata/weather-log-1750255423.json";
+    const sas = "se=2025-06-18T22%3A12Z&sp=r&sv=2022-11-02&sr=b&sig=F7DpYNB%2B9O1QjJV97Wcyl38orzafSVa1wm8ZMyrPWQo%3D";
+    const fullUrl = `${blobUrl}?${sas}`;
 
     fetch(blobSasUrl)
       .then(response => {
